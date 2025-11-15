@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # IACE Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iace-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app/app
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - iace-network
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: iace-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - iace-network
+
+  # PostgreSQL (optional - for local dev if not using Supabase)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: iace-postgres
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     POSTGRES_DB: iace
+  #     POSTGRES_USER: iace
+  #     POSTGRES_PASSWORD: iace_password
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+  #   networks:
+  #     - iace-network
+
+volumes:
+  redis-data:
+  # postgres-data:
+
+networks:
+  iace-network:
+    driver: bridge
+
